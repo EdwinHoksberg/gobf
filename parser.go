@@ -4,17 +4,13 @@ import (
 	"errors"
 )
 
-type Parser struct {
-	depth    int
-	depthMap map[int]int
-}
+type Parser struct{}
 
 func (parser *Parser) Parse(input string) ([]Instruction, error) {
-	parser.depth = 0
-	parser.depthMap = map[int]int{}
-
+	var depth = 0
+	var depthMap = map[int]int{}
 	var instructions []Instruction
-	var counter int = 0
+	var counter = 0
 
 	for _, character := range input {
 		instructionName := parser.instructionTypeFromCharacter(character)
@@ -24,20 +20,20 @@ func (parser *Parser) Parse(input string) ([]Instruction, error) {
 		}
 
 		if instructionName == JumpIfZero {
-			parser.depth++
-			parser.depthMap[parser.depth] = counter
+			depth++
+			depthMap[depth] = counter
 		}
 
 		var jumpPoint = 0
 		if instructionName == JumpUnlessZero {
-			if parser.depth == 0 {
+			if depth == 0 {
 				return nil, errors.New("no matching '[' found")
 			}
 
-			jumpPoint = parser.depthMap[parser.depth]
-			delete(parser.depthMap, parser.depth)
+			jumpPoint = depthMap[depth]
+			delete(depthMap, depth)
 
-			parser.depth--
+			depth--
 			instructions[jumpPoint].jumpPoint = counter
 		}
 
@@ -47,7 +43,7 @@ func (parser *Parser) Parse(input string) ([]Instruction, error) {
 		counter++
 	}
 
-	if len(parser.depthMap) != 0 {
+	if len(depthMap) != 0 {
 		return nil, errors.New("no matching ']' found")
 	}
 
