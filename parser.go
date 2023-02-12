@@ -9,8 +9,18 @@ type Parser struct{}
 func (parser *Parser) Parse(input string) ([]Instruction, error) {
 	var depth = 0
 	var depthMap = map[int]int{}
-	var instructions []Instruction
 	var counter = 0
+
+	var validInstructions = 0
+	for _, character := range input {
+		instructionName := parser.instructionTypeFromCharacter(character)
+
+		if instructionName != Unknown {
+			validInstructions++
+		}
+	}
+
+	instructions := make([]Instruction, 0, validInstructions)
 
 	for _, character := range input {
 		instructionName := parser.instructionTypeFromCharacter(character)
