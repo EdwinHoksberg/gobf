@@ -1,18 +1,22 @@
 package main
 
 import (
+	"flag"
 	"io"
 	"log"
 	"os"
 )
 
 func main() {
-	if len(os.Args) != 2 {
+	memorySize := flag.Uint("memory-size", 30_000, "Size (in bytes) of the memory available to the brainfuck program")
+	flag.Parse()
+
+	if len(flag.Args()) != 1 {
 		log.Printf("gobf: try '%s input.b'\n", os.Args[0])
 		os.Exit(2)
 	}
 
-	inputData := parseInputData(os.Args[1])
+	inputData := parseInputData(flag.Arg(0))
 
 	parser := Parser{}
 	instructions, err := parser.Parse(inputData)
@@ -22,8 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var memorySize uint = 30_000
-	memory := make([]uint8, memorySize)
+	memory := make([]uint8, *memorySize)
 
 	cpu := Cpu{
 		memory: memory,
