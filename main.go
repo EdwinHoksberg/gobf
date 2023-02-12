@@ -8,7 +8,7 @@ import (
 
 func main() {
 	if len(os.Args) != 2 {
-		log.Printf("go-brainfuck: try '%s input.b'\n", os.Args[0])
+		log.Printf("gobf: try '%s input.b'\n", os.Args[0])
 		os.Exit(2)
 	}
 
