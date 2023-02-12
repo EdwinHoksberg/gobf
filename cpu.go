@@ -41,14 +41,14 @@ func (cpu *Cpu) Execute(instruction Instruction) {
 		_, err := cpu.output.Write([]byte{cpu.memory[cpu.addressCounter]})
 
 		if err != nil {
-			panic(fmt.Sprintf("unrecoverable cpu error: %s", err))
+			panic(fmt.Sprintf("unrecoverable io error: %s", err))
 		}
 	case Read:
 		data := make([]byte, 1)
 		bytesRead, err := cpu.input.Read(data)
 
 		if err != nil {
-			panic(fmt.Sprintf("unrecoverable cpu error: %s", err))
+			panic(fmt.Sprintf("unrecoverable io error: %s", err))
 		}
 
 		if bytesRead > 0 {
