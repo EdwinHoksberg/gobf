@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
 	"io"
 	"log"
@@ -9,6 +10,7 @@ import (
 
 func main() {
 	memorySize := flag.Uint("memory-size", 30_000, "Size (in bytes) of the memory available to the program")
+	dumpGeneratedJitCode := flag.Bool("dump-jit", false, "Dump generated JIT code to stderr")
 	flag.Parse()
 
 	if len(flag.Args()) != 1 {
@@ -32,6 +34,12 @@ func main() {
 	jit := NewJit()
 	if err := jit.Compile(instructions); err != nil {
 		panic(err)
+	}
+
+	if *dumpGeneratedJitCode {
+		if _, err := os.Stderr.WriteString(hex.EncodeToString(jit.code)); err != nil {
+			log.Printf("error writing jit code to stderr: %s\n", err)
+		}
 	}
 
 	if err := jit.Run(*memorySize); err != nil {
