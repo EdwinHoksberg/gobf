@@ -1,6 +1,6 @@
 //go:build darwin && arm64
 
-package main // @todo move to own subdirectory
+package main
 
 import (
 	"encoding/binary"
@@ -8,21 +8,6 @@ import (
 	"syscall"
 	"unsafe"
 )
-
-type Jit struct {
-	code   []byte
-	blocks []CodeBlock
-}
-
-type CodeBlock struct {
-	instruction Instruction
-	offset      int32
-	partner     *CodeBlock
-}
-
-// run in lldb: lldb gobf -- -memory-size 64 jit-test.b
-// how to show program memory in lld (i think): mem read -c64 '(int*)$x15'
-// 0x00, 0x00, 0x3e, 0xd4, // brk #0xf000
 
 func (jit *Jit) compile(instructions []Instruction) error {
 	// x0 contains a pointer to program memory
@@ -41,6 +26,7 @@ func (jit *Jit) compile(instructions []Instruction) error {
 
 		// move first argument(pointer to program memory) to x15
 		0xef, 0x03, 0x00, 0xaa, // mov x15, x0
+
 		// move second argument(pointer to executable memory) to x14
 		0xee, 0x03, 0x01, 0xaa, // mov x14, x1
 	)
@@ -48,8 +34,7 @@ func (jit *Jit) compile(instructions []Instruction) error {
 	for _, instruction := range instructions {
 		block := CodeBlock{
 			instruction: instruction,
-			offset:      int32(len(jit.code)),
-			partner:     nil,
+			offset:      len(jit.code),
 		}
 
 		switch instruction.name {
@@ -129,23 +114,23 @@ func (jit *Jit) compile(instructions []Instruction) error {
 			)
 		case JumpIfZero:
 			jit.code = append(jit.code,
-				//0x00, 0x00, 0x3e, 0xd4, // brk #0xf000
-
 				// load the current value of the program memory offset by the address counter
 				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
-				//
+
+				// jump to right before the linked jump instruction
 				0x2b, 0x00, 0x00, 0x34, // cbz w11, #0
 			)
 		case JumpUnlessZero:
 			jit.code = append(jit.code,
 				// load the current value of the program memory offset by the address counter
 				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
-				//
-				0xab, 0xff, 0xff, 0x35, // cbnz w11, #0
+
+				// jump to right after the linked jump instruction
+				0x00, 0x00, 0x00, 0x35, // cbnz w11, #0
 			)
 		}
 
-		jit.blocks = append(jit.blocks, block)
+		jit.codeBlocks = append(jit.codeBlocks, block)
 	}
 
 	jit.code = append(jit.code,
@@ -156,61 +141,9 @@ func (jit *Jit) compile(instructions []Instruction) error {
 		0xc0, 0x03, 0x5f, 0xd6, // ret
 	)
 
-	for i, compiledBlock := range jit.blocks {
-		if compiledBlock.instruction.name != JumpIfZero && compiledBlock.instruction.name != JumpUnlessZero {
-			continue
-		}
-
-		jit.blocks[i].partner = &jit.blocks[compiledBlock.instruction.linkedJump]
-	}
-
-	for _, block := range jit.blocks {
-		if block.partner != nil {
-			jumpToOffset := block.partner.offset - block.offset + 4
-
-			opcode := EncodeCBZ(block, jumpToOffset)
-
-			// +4 because we need to insert it in after the ldrb instruction
-			binary.LittleEndian.PutUint32(jit.code[block.offset+4:], opcode)
-		}
-	}
+	jit.postProcessJumps()
 
 	return nil
-}
-
-// signExtend19 extends a 19-bit signed integer to a 32-bit signed integer.
-func signExtend19(offset int32) int32 {
-	if offset&(1<<18) != 0 { // If the 19th bit (sign bit) is set
-		offset |= ^((1 << 19) - 1) // Extend the sign bit to 32 bits
-	}
-	return offset
-}
-
-// EncodeCBZ encodes a CBZ instruction in AArch64 with the specified register and offset.
-func EncodeCBZ(block CodeBlock, offset int32) uint32 {
-	// Sign-extend the offset to 19 bits
-	offset = signExtend19(offset / 4)
-
-	// Ensure the offset fits in a signed 19-bit integer (-2^18 to 2^18 - 1)
-	if offset < -(1<<18) || offset >= (1<<18) {
-		panic("offset is out of range for CBZ")
-	}
-
-	// Base opcode for CBZ
-	var opcode uint32
-	if block.instruction.name == JumpIfZero {
-		opcode = uint32(0x34000000)
-	} else {
-		opcode = uint32(0x35000000)
-	}
-
-	// Encode the offset into bits [23:5]
-	opcode |= (uint32(offset) & 0x7FFFF) << 5
-
-	// Encode the register into bits [4:0]
-	opcode |= uint32(11 & 0x1F) // 11 = w11
-
-	return opcode
 }
 
 func (jit *Jit) run(memorySize uint) error {
@@ -248,4 +181,54 @@ func (jit *Jit) run(memorySize uint) error {
 	}
 
 	return nil
+}
+
+func (jit *Jit) postProcessJumps() {
+	for i, block := range jit.codeBlocks {
+		if block.instruction.name != JumpIfZero && block.instruction.name != JumpUnlessZero {
+			continue
+		}
+
+		jit.codeBlocks[i].link = &jit.codeBlocks[block.instruction.link]
+	}
+
+	for _, block := range jit.codeBlocks {
+		if block.instruction.name != JumpIfZero && block.instruction.name != JumpUnlessZero {
+			// Only process jump instructions
+			continue
+		}
+
+		if block.link == nil {
+			// Only process linked blocks
+			continue
+		}
+
+		offset := (block.link.offset - block.offset + 4) / 4
+
+		// Sign-extend the offset to 19 bits
+		if offset&(1<<18) != 0 { // If the 19th bit (sign bit) is set
+			offset |= ^((1 << 19) - 1) // Extend the sign bit to 32 bits
+		}
+
+		// Ensure the offset fits in a signed 19-bit integer (-2^18 to 2^18 - 1)
+		if offset < -(1<<18) || offset >= (1<<18) {
+			panic("offset is out of range for a jump")
+		}
+
+		// Base opcode for CBZ
+		opcode := uint32(0x34000000)
+		if block.instruction.name == JumpUnlessZero {
+			// Base opcode for CBNZ
+			opcode = uint32(0x35000000)
+		}
+
+		// Encode the offset into bits [23:5]
+		opcode |= (uint32(offset) & 0x7FFFF) << 5
+
+		// Encode the register into bits [4:0]
+		opcode |= uint32(11 & 0x1F) // 11 = w11
+
+		// +4 because we need to insert it in after the ldrb instruction
+		binary.LittleEndian.PutUint32(jit.code[block.offset+4:], opcode)
+	}
 }

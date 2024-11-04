@@ -34,20 +34,20 @@ func (parser *Parser) Parse(input string) ([]Instruction, error) {
 			depthMap[depth] = counter
 		}
 
-		var jumpPoint = 0
+		var linkOffset = 0
 		if instructionName == JumpUnlessZero {
 			if depth == 0 {
 				return nil, errors.New("no matching '[' found")
 			}
 
-			jumpPoint = depthMap[depth]
+			linkOffset = depthMap[depth]
 			delete(depthMap, depth)
 
 			depth--
-			instructions[jumpPoint].linkedJump = counter
+			instructions[linkOffset].link = counter
 		}
 
-		instruction := Instruction{instructionName, jumpPoint}
+		instruction := Instruction{instructionName, linkOffset}
 
 		instructions = append(instructions, instruction)
 		counter++
