@@ -38,21 +38,6 @@ func main() {
 	if err := jit.run(*memorySize); err != nil {
 		panic(err)
 	}
-
-	return
-
-	memory := make([]uint8, *memorySize)
-
-	cpu := Cpu{
-		memory: memory,
-		code:   instructions,
-		input:  io.Reader(os.Stdin),
-		output: io.Writer(os.Stdout),
-	}
-
-	for cpu.HasInstructionsLeft() {
-		cpu.Step()
-	}
 }
 
 func parseInput(arg string) string {
