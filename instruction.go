@@ -15,8 +15,8 @@ const (
 )
 
 type Instruction struct {
-	name      InstructionType
-	jumpPoint int
+	name       InstructionType
+	linkedJump int // @todo can this be a reference to an instruction?
 }
 
 func (instruction *InstructionType) toString() string {

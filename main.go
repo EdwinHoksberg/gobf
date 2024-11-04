@@ -2,13 +2,14 @@ package main
 
 import (
 	"flag"
+	"golang.org/x/sys/unix"
 	"io"
 	"log"
 	"os"
 )
 
 func main() {
-	memorySize := flag.Uint("memory-size", 30_000, "Size (in bytes) of the memory available to the brainfuck program")
+	memorySize := flag.Uint("memory-size", 30_000, "Size (in bytes) of the memory available to the program")
 	flag.Parse()
 
 	if len(flag.Args()) != 1 {
@@ -16,7 +17,10 @@ func main() {
 		os.Exit(2)
 	}
 
-	inputData := parseInputData(flag.Arg(0))
+	inputData := parseInput(flag.Arg(0))
+
+	terminalSettings := updateTerminalSettings()
+	defer resetTerminalSettings(terminalSettings)
 
 	parser := Parser{}
 	instructions, err := parser.Parse(inputData)
@@ -25,6 +29,17 @@ func main() {
 		log.Printf("unrecoverable parser error: %s\n", err)
 		os.Exit(1)
 	}
+
+	jit := Jit{}
+	if err := jit.compile(instructions); err != nil {
+		panic(err)
+	}
+
+	if err := jit.run(*memorySize); err != nil {
+		panic(err)
+	}
+
+	return
 
 	memory := make([]uint8, *memorySize)
 
@@ -40,7 +55,7 @@ func main() {
 	}
 }
 
-func parseInputData(arg string) string {
+func parseInput(arg string) string {
 	if arg == "-" {
 		stdin, err := io.ReadAll(os.Stdin)
 		if err != nil {
@@ -56,4 +71,30 @@ func parseInputData(arg string) string {
 	}
 
 	return string(contents)
+}
+
+func updateTerminalSettings() *unix.Termios {
+	oldState, err := unix.IoctlGetTermios(int(os.Stdin.Fd()), getTermios)
+	if err != nil {
+		return nil
+	}
+
+	newState := oldState
+	newState.Lflag &^= unix.ICANON | unix.ECHO
+
+	if err := unix.IoctlSetTermios(int(os.Stdin.Fd()), setTermios, newState); err != nil {
+		panic("failed to update terminal settings: " + err.Error())
+	}
+
+	return oldState
+}
+
+func resetTerminalSettings(terminalSettings *unix.Termios) {
+	if terminalSettings == nil {
+		return
+	}
+
+	if err := unix.IoctlSetTermios(int(os.Stdin.Fd()), setTermios, terminalSettings); err != nil {
+		panic("failed to reset terminal settings: " + err.Error())
+	}
 }

@@ -190,7 +190,7 @@ func TestCpu_JumpIfZeroInstruction(t *testing.T) {
 
 	// emulated instructions: [ ++ ]
 
-	cpu.Execute(Instruction{name: JumpUnlessZero, jumpPoint: 4})
+	cpu.Execute(Instruction{name: JumpUnlessZero, linkedJump: 4})
 
 	if cpu.programCounter != 1 {
 		t.Errorf("unexpected program counter, got %d, want %d", cpu.programCounter, 1)
@@ -203,7 +203,7 @@ func TestCpu_JumpIfZeroInstruction(t *testing.T) {
 		t.Errorf("unexpected memory state, got %d, want %d", memory[0], 2)
 	}
 
-	cpu.Execute(Instruction{name: JumpIfZero, jumpPoint: 0})
+	cpu.Execute(Instruction{name: JumpIfZero, linkedJump: 0})
 
 	if cpu.programCounter != 4 {
 		t.Errorf("unexpected program counter, got %d, want %d", cpu.programCounter, 4)
@@ -216,7 +216,7 @@ func TestCpu_JumpUnlessZeroInstruction(t *testing.T) {
 
 	// emulated instructions: [ + ] [ - ]
 
-	cpu.Execute(Instruction{name: JumpUnlessZero, jumpPoint: 2})
+	cpu.Execute(Instruction{name: JumpUnlessZero, linkedJump: 2})
 
 	if cpu.programCounter != 1 {
 		t.Errorf("unexpected program counter, got %d, want %d", cpu.programCounter, 1)
@@ -228,13 +228,13 @@ func TestCpu_JumpUnlessZeroInstruction(t *testing.T) {
 		t.Errorf("unexpected memory state, got %d, want %d", memory[0], 1)
 	}
 
-	cpu.Execute(Instruction{name: JumpIfZero, jumpPoint: 0})
+	cpu.Execute(Instruction{name: JumpIfZero, linkedJump: 0})
 
 	if cpu.programCounter != 3 {
 		t.Errorf("unexpected program counter, got %d, want %d", cpu.programCounter, 3)
 	}
 
-	cpu.Execute(Instruction{name: JumpUnlessZero, jumpPoint: 5})
+	cpu.Execute(Instruction{name: JumpUnlessZero, linkedJump: 5})
 
 	if cpu.programCounter != 5 {
 		t.Errorf("unexpected program counter, got %d, want %d", cpu.programCounter, 5)
@@ -246,7 +246,7 @@ func TestCpu_JumpUnlessZeroInstruction(t *testing.T) {
 		t.Errorf("unexpected memory state, got %d, want %d", memory[0], 0)
 	}
 
-	cpu.Execute(Instruction{name: JumpIfZero, jumpPoint: 3})
+	cpu.Execute(Instruction{name: JumpIfZero, linkedJump: 3})
 
 	if cpu.programCounter != 3 {
 		t.Errorf("unexpected program counter, got %d, want %d", cpu.programCounter, 5)
