@@ -61,12 +61,12 @@ func TestParser_ParseMultiple(t *testing.T) {
 			"+-",
 			[]Instruction{
 				{
-					name:       Increment,
-					linkedJump: 0,
+					name: Increment,
+					link: 0,
 				},
 				{
-					name:       Decrement,
-					linkedJump: 0,
+					name: Decrement,
+					link: 0,
 				},
 			},
 		},
@@ -74,20 +74,20 @@ func TestParser_ParseMultiple(t *testing.T) {
 			">><>",
 			[]Instruction{
 				{
-					name:       MoveRight,
-					linkedJump: 0,
+					name: MoveRight,
+					link: 0,
 				},
 				{
-					name:       MoveRight,
-					linkedJump: 0,
+					name: MoveRight,
+					link: 0,
 				},
 				{
-					name:       MoveLeft,
-					linkedJump: 0,
+					name: MoveLeft,
+					link: 0,
 				},
 				{
-					name:       MoveRight,
-					linkedJump: 0,
+					name: MoveRight,
+					link: 0,
 				},
 			},
 		},
@@ -95,28 +95,28 @@ func TestParser_ParseMultiple(t *testing.T) {
 			"[[]][]",
 			[]Instruction{
 				{
-					name:       JumpIfZero,
-					linkedJump: 3,
+					name: JumpIfZero,
+					link: 3,
 				},
 				{
-					name:       JumpIfZero,
-					linkedJump: 2,
+					name: JumpIfZero,
+					link: 2,
 				},
 				{
-					name:       JumpUnlessZero,
-					linkedJump: 1,
+					name: JumpUnlessZero,
+					link: 1,
 				},
 				{
-					name:       JumpUnlessZero,
-					linkedJump: 0,
+					name: JumpUnlessZero,
+					link: 0,
 				},
 				{
-					name:       JumpIfZero,
-					linkedJump: 5,
+					name: JumpIfZero,
+					link: 5,
 				},
 				{
-					name:       JumpUnlessZero,
-					linkedJump: 4,
+					name: JumpUnlessZero,
+					link: 4,
 				},
 			},
 		},
@@ -139,8 +139,8 @@ func TestParser_ParseMultiple(t *testing.T) {
 				if instruction.name != test.instructions[i].name {
 					t.Errorf("got name %s, want name %s", test.instructions[i].name.toString(), instruction.name.toString())
 				}
-				if instruction.linkedJump != test.instructions[i].linkedJump {
-					t.Errorf("got linkedJump %d, want linkedJump %d", test.instructions[i].linkedJump, instruction.linkedJump)
+				if instruction.link != test.instructions[i].link {
+					t.Errorf("got link %d, want link %d", test.instructions[i].link, instruction.link)
 				}
 			}
 		})
