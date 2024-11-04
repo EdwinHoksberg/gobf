@@ -6,6 +6,10 @@ import (
 
 type Parser struct{}
 
+func NewParser() Parser {
+	return Parser{}
+}
+
 func (parser *Parser) Parse(input string) ([]Instruction, error) {
 	var depth = 0
 	var depthMap = map[int]int{}

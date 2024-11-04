@@ -21,7 +21,7 @@ func main() {
 	terminalSettings := disableTerminalInputBuffering()
 	defer resetTerminal(terminalSettings)
 
-	parser := Parser{}
+	parser := NewParser()
 	instructions, err := parser.Parse(inputData)
 
 	if err != nil {
@@ -29,12 +29,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	jit := Jit{}
-	if err := jit.compile(instructions); err != nil {
+	jit := NewJit()
+	if err := jit.Compile(instructions); err != nil {
 		panic(err)
 	}
 
-	if err := jit.run(*memorySize); err != nil {
+	if err := jit.Run(*memorySize); err != nil {
 		panic(err)
 	}
 }

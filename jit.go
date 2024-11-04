@@ -10,3 +10,7 @@ type CodeBlock struct {
 	offset      int
 	link        *CodeBlock
 }
+
+func NewJit() *Jit {
+	return &Jit{}
+}
