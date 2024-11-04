@@ -25,9 +25,13 @@ type CodeBlock struct {
 // 0x00, 0x00, 0x3e, 0xd4, // brk #0xf000
 
 func (jit *Jit) compile(instructions []Instruction) error {
-	// register x0 contains a pointer to program memory
+	// x0 contains a pointer to program memory
+	// x1 contains a pointer to executable memory
 
-	// x9 to x15 are scratch registers and can be used freely
+	// x9 = address counter
+	// x10 = program counter (can be removed?)
+	// x11 = scratch
+	// x15 = pointer to program memory
 
 	jit.code = append(jit.code,
 		// reset registers x9, x10, x11 to 0
@@ -40,14 +44,6 @@ func (jit *Jit) compile(instructions []Instruction) error {
 		// move second argument(pointer to executable memory) to x14
 		0xee, 0x03, 0x01, 0xaa, // mov x14, x1
 	)
-
-	// x9 = address counter
-	// x10 = program counter (can be removed?)
-	// x11 = scratch
-	// x15 = pointer to program memory
-
-	// scratchpad: https://godbolt.org/z/E1EdbnYPj
-	// @todo increment example https://godbolt.org/z/fExKnMK6b
 
 	for _, instruction := range instructions {
 		block := CodeBlock{
@@ -172,11 +168,9 @@ func (jit *Jit) compile(instructions []Instruction) error {
 		if block.partner != nil {
 			jumpToOffset := block.partner.offset - block.offset + 4
 
-			//fmt.Printf("block offset: %d, partner offset: %d, required jump: %d\n", block.offset, block.partner.offset, jumpToOffset)
-
 			opcode := EncodeCBZ(block, jumpToOffset)
 
-			// +4 because we need to paste it in after the ldrb instruction
+			// +4 because we need to insert it in after the ldrb instruction
 			binary.LittleEndian.PutUint32(jit.code[block.offset+4:], opcode)
 		}
 	}
@@ -220,9 +214,6 @@ func EncodeCBZ(block CodeBlock, offset int32) uint32 {
 }
 
 func (jit *Jit) run(memorySize uint) error {
-	//binary.Write(os.Stdout, binary.LittleEndian, jit.code)
-	//return nil
-
 	// Allocate program memory
 	programMemory, err := syscall.Mmap(-1, 0, int(memorySize), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_ANON|syscall.MAP_PRIVATE)
 	if err != nil {
@@ -255,8 +246,6 @@ func (jit *Jit) run(memorySize uint) error {
 	if _, _, errno := syscall.Syscall(syscall.SYS_MSYNC, uintptr(programMemoryPointer), uintptr(memorySize), syscall.MS_SYNC); errno != 0 {
 		return errors.New("failed to sync program memory after running: " + errno.Error())
 	}
-
-	//fmt.Printf("%x\n", programMemory)
 
 	return nil
 }
