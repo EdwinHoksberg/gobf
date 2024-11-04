@@ -44,7 +44,7 @@ func (parser *Parser) Parse(input string) ([]Instruction, error) {
 			delete(depthMap, depth)
 
 			depth--
-			instructions[jumpPoint].jumpPoint = counter
+			instructions[jumpPoint].linkedJump = counter
 		}
 
 		instruction := Instruction{instructionName, jumpPoint}

@@ -61,12 +61,12 @@ func TestParser_ParseMultiple(t *testing.T) {
 			"+-",
 			[]Instruction{
 				{
-					name:      Increment,
-					jumpPoint: 0,
+					name:       Increment,
+					linkedJump: 0,
 				},
 				{
-					name:      Decrement,
-					jumpPoint: 0,
+					name:       Decrement,
+					linkedJump: 0,
 				},
 			},
 		},
@@ -74,20 +74,20 @@ func TestParser_ParseMultiple(t *testing.T) {
 			">><>",
 			[]Instruction{
 				{
-					name:      MoveRight,
-					jumpPoint: 0,
+					name:       MoveRight,
+					linkedJump: 0,
 				},
 				{
-					name:      MoveRight,
-					jumpPoint: 0,
+					name:       MoveRight,
+					linkedJump: 0,
 				},
 				{
-					name:      MoveLeft,
-					jumpPoint: 0,
+					name:       MoveLeft,
+					linkedJump: 0,
 				},
 				{
-					name:      MoveRight,
-					jumpPoint: 0,
+					name:       MoveRight,
+					linkedJump: 0,
 				},
 			},
 		},
@@ -95,28 +95,28 @@ func TestParser_ParseMultiple(t *testing.T) {
 			"[[]][]",
 			[]Instruction{
 				{
-					name:      JumpIfZero,
-					jumpPoint: 3,
+					name:       JumpIfZero,
+					linkedJump: 3,
 				},
 				{
-					name:      JumpIfZero,
-					jumpPoint: 2,
+					name:       JumpIfZero,
+					linkedJump: 2,
 				},
 				{
-					name:      JumpUnlessZero,
-					jumpPoint: 1,
+					name:       JumpUnlessZero,
+					linkedJump: 1,
 				},
 				{
-					name:      JumpUnlessZero,
-					jumpPoint: 0,
+					name:       JumpUnlessZero,
+					linkedJump: 0,
 				},
 				{
-					name:      JumpIfZero,
-					jumpPoint: 5,
+					name:       JumpIfZero,
+					linkedJump: 5,
 				},
 				{
-					name:      JumpUnlessZero,
-					jumpPoint: 4,
+					name:       JumpUnlessZero,
+					linkedJump: 4,
 				},
 			},
 		},
@@ -139,8 +139,8 @@ func TestParser_ParseMultiple(t *testing.T) {
 				if instruction.name != test.instructions[i].name {
 					t.Errorf("got name %s, want name %s", test.instructions[i].name.toString(), instruction.name.toString())
 				}
-				if instruction.jumpPoint != test.instructions[i].jumpPoint {
-					t.Errorf("got jumpPoint %d, want jumpPoint %d", test.instructions[i].jumpPoint, instruction.jumpPoint)
+				if instruction.linkedJump != test.instructions[i].linkedJump {
+					t.Errorf("got linkedJump %d, want linkedJump %d", test.instructions[i].linkedJump, instruction.linkedJump)
 				}
 			}
 		})

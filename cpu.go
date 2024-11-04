@@ -56,11 +56,11 @@ func (cpu *Cpu) Execute(instruction Instruction) {
 		}
 	case JumpIfZero:
 		if cpu.memory[cpu.addressCounter] == 0 {
-			cpu.programCounter = instruction.jumpPoint - 1
+			cpu.programCounter = instruction.linkedJump - 1
 		}
 	case JumpUnlessZero:
 		if cpu.memory[cpu.addressCounter] != 0 {
-			cpu.programCounter = instruction.jumpPoint - 1
+			cpu.programCounter = instruction.linkedJump - 1
 		}
 	}
 
