@@ -18,7 +18,7 @@ func TestJit_Compile(t *testing.T) {
 	}
 
 	jit := Jit{}
-	err := jit.compile(instructions)
+	err := jit.Compile(instructions)
 
 	if err != nil {
 		t.Errorf("expected no error, got %s", err)

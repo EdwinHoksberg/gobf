@@ -9,7 +9,7 @@ import (
 	"unsafe"
 )
 
-func (jit *Jit) compile(instructions []Instruction) error {
+func (jit *Jit) Compile(instructions []Instruction) error {
 	// x0 contains a pointer to program memory
 	// x1 contains a pointer to executable memory
 
@@ -146,7 +146,7 @@ func (jit *Jit) compile(instructions []Instruction) error {
 	return nil
 }
 
-func (jit *Jit) run(memorySize uint) error {
+func (jit *Jit) Run(memorySize uint) error {
 	// Allocate program memory
 	programMemory, err := syscall.Mmap(-1, 0, int(memorySize), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_ANON|syscall.MAP_PRIVATE)
 	if err != nil {
