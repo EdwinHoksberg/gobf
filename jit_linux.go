@@ -73,8 +73,6 @@ func (jit *Jit) compile(instructions []Instruction) error {
 }
 
 func (jit *Jit) run() {
-	//os.Stdout.Write(jit.code)
-
 	// @todo mmap also the cpu.memory region for jit to use
 	programMemory, err := syscall.Mmap(-1, 0, 64, syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_ANON|syscall.MAP_PRIVATE)
 	if err != nil {
