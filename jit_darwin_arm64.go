@@ -175,11 +175,6 @@ func (jit *Jit) run(memorySize uint) error {
 	f := *(*func(programMemory unsafe.Pointer, executableMemory unsafe.Pointer))(unsafe.Pointer(&executableMemoryPointer))
 	f(programMemoryPointer, unsafe.Pointer(&executableMemory[0]))
 
-	// Flush any changes made by the JIT code to program memory
-	if _, _, errno := syscall.Syscall(syscall.SYS_MSYNC, uintptr(programMemoryPointer), uintptr(memorySize), syscall.MS_SYNC); errno != 0 {
-		return errors.New("failed to sync program memory after running: " + errno.Error())
-	}
-
 	return nil
 }
 
