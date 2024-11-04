@@ -14,7 +14,7 @@ func (jit *Jit) compile(instructions []Instruction) error {
 	// x1 contains a pointer to executable memory
 
 	// x9 = address counter
-	// x10 = program counter (can be removed?)
+	// x10 = program counter
 	// x11 = scratch
 	// x15 = pointer to program memory
 
