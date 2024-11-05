@@ -26,9 +26,6 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 
 		// move first argument(pointer to program memory) to x15
 		0xef, 0x03, 0x00, 0xaa, // mov x15, x0
-
-		// move second argument(pointer to executable memory) to x14
-		0xee, 0x03, 0x01, 0xaa, // mov x14, x1
 	)
 
 	for _, instruction := range instructions {
@@ -46,6 +43,7 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 			)
 		case MoveLeft:
 			// @todo check for underflow(< 0) and wrap
+
 			jit.code = append(jit.code,
 				// decrease the address counter by one
 				0x29, 0x05, 0x00, 0xd1, // sub x9, x9, #1
@@ -56,6 +54,7 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
 
 				// add one to the value which we've loaded
+				// @todo instead of using #1 here, use value from instruction.optimized
 				0x6b, 0x05, 0x00, 0x91, // add x11, x11, #1
 
 				// store the value back to the program memory including offset
@@ -67,6 +66,7 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
 
 				// subtract one to the value which we've loaded
+				// @todo instead of using #1 here, use value from instruction.optimized
 				0x6b, 0x05, 0x00, 0xd1, // sub x11, x11, #1
 
 				// store the value back to the program memory including offset
@@ -146,9 +146,9 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 	return nil
 }
 
-func (jit *Jit) Run(memorySize uint) error {
+func (jit *Jit) Run() error {
 	// Allocate program memory
-	programMemory, err := syscall.Mmap(-1, 0, int(memorySize), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_ANON|syscall.MAP_PRIVATE)
+	programMemory, err := syscall.Mmap(-1, 0, int(jit.memorySize), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_ANON|syscall.MAP_PRIVATE)
 	if err != nil {
 		return errors.New("failed to map program memory: " + err.Error())
 	}
@@ -172,15 +172,15 @@ func (jit *Jit) Run(memorySize uint) error {
 	programMemoryPointer := unsafe.Pointer(&programMemory[0])
 
 	// Define JIT call function and execute it
-	f := *(*func(programMemory unsafe.Pointer, executableMemory unsafe.Pointer))(unsafe.Pointer(&executableMemoryPointer))
-	f(programMemoryPointer, unsafe.Pointer(&executableMemory[0]))
+	f := *(*func(programMemory unsafe.Pointer))(unsafe.Pointer(&executableMemoryPointer))
+	f(programMemoryPointer)
 
 	return nil
 }
 
 func (jit *Jit) postProcessJumps() {
 	for i, block := range jit.codeBlocks {
-		if block.instruction.name != JumpIfZero && block.instruction.name != JumpUnlessZero {
+		if !block.instruction.isJump() {
 			continue
 		}
 
@@ -188,7 +188,7 @@ func (jit *Jit) postProcessJumps() {
 	}
 
 	for _, block := range jit.codeBlocks {
-		if block.instruction.name != JumpIfZero && block.instruction.name != JumpUnlessZero {
+		if !block.instruction.isJump() {
 			// Only process jump instructions
 			continue
 		}

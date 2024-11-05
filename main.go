@@ -31,7 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	jit := NewJit()
+	jit := NewJit(*memorySize)
 	if err := jit.Compile(instructions); err != nil {
 		panic(err)
 	}
@@ -42,7 +42,7 @@ func main() {
 		}
 	}
 
-	if err := jit.Run(*memorySize); err != nil {
+	if err := jit.Run(); err != nil {
 		panic(err)
 	}
 }

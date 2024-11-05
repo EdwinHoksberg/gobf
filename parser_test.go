@@ -19,7 +19,7 @@ func TestParser_ParseSingle(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		parser := Parser{}
+		parser := NewParser()
 		testName := fmt.Sprintf("%s == %s", test.input, test.instructionType.toString())
 		t.Run(testName, func(t *testing.T) {
 			instructions, err := parser.Parse(test.input)
@@ -40,7 +40,7 @@ func TestParser_ParseSingle(t *testing.T) {
 }
 
 func TestParser_ParseUnknown(t *testing.T) {
-	parser := Parser{}
+	parser := NewParser()
 	instructions, err := parser.Parse("x")
 
 	if err != nil {
@@ -123,7 +123,7 @@ func TestParser_ParseMultiple(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		parser := Parser{}
+		parser := NewParser()
 		t.Run(test.input, func(t *testing.T) {
 			instructions, err := parser.Parse(test.input)
 
@@ -161,7 +161,7 @@ func TestParser_MatchJumpGroups(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		parser := Parser{}
+		parser := NewParser()
 		t.Run(test.name, func(t *testing.T) {
 			instructions, err := parser.Parse(test.input)
 
@@ -177,7 +177,7 @@ func TestParser_MatchJumpGroups(t *testing.T) {
 }
 
 func FuzzParser_Parse(f *testing.F) {
-	parser := Parser{}
+	parser := NewParser()
 	f.Fuzz(func(t *testing.T, input string) {
 		parser.Parse(input)
 	})

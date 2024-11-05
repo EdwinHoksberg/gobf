@@ -43,3 +43,7 @@ func (instruction *InstructionType) toString() string {
 
 	return "Unknown"
 }
+
+func (instruction *Instruction) isJump() bool {
+	return instruction.name == JumpIfZero || instruction.name == JumpUnlessZero
+}
