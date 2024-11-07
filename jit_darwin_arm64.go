@@ -51,7 +51,6 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
 
 				// add one to the value which we've loaded
-				// @todo instead of using #1 here, use value from instruction.optimized
 				0x6b, 0x05, 0x00, 0x91, // add x11, x11, #1
 
 				// store the value back to the program memory including offset
@@ -63,7 +62,6 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
 
 				// subtract one to the value which we've loaded
-				// @todo instead of using #1 here, use value from instruction.optimized
 				0x6b, 0x05, 0x00, 0xd1, // sub x11, x11, #1
 
 				// store the value back to the program memory including offset
