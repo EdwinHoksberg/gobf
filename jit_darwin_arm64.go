@@ -36,14 +36,11 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 
 		switch instruction.name {
 		case MoveRight:
-			// @todo check for overflow(> size of program memory) and wrap
 			jit.code = append(jit.code,
 				// increase the address counter by one
 				0x29, 0x05, 0x00, 0x91, // add x9, x9, #1
 			)
 		case MoveLeft:
-			// @todo check for underflow(< 0) and wrap
-
 			jit.code = append(jit.code,
 				// decrease the address counter by one
 				0x29, 0x05, 0x00, 0xd1, // sub x9, x9, #1
