@@ -1,26 +1,27 @@
-package main
+package parser
 
 import (
 	"fmt"
+	"gobf/instructions"
 	"testing"
 )
 
 func TestParser_ParseSingle(t *testing.T) {
 	var tests = []struct {
 		input           string
-		instructionType InstructionType
+		instructionType instructions.InstructionType
 	}{
-		{"+", Increment},
-		{"-", Decrement},
-		{">", MoveRight},
-		{"<", MoveLeft},
-		{",", Read},
-		{".", Write},
+		{"+", instructions.Increment},
+		{"-", instructions.Decrement},
+		{">", instructions.MoveRight},
+		{"<", instructions.MoveLeft},
+		{",", instructions.Read},
+		{".", instructions.Write},
 	}
 
 	for _, test := range tests {
 		parser := NewParser()
-		testName := fmt.Sprintf("%s == %s", test.input, test.instructionType.toString())
+		testName := fmt.Sprintf("%s == %s", test.input, test.instructionType.ToString())
 		t.Run(testName, func(t *testing.T) {
 			instructions, err := parser.Parse(test.input)
 
@@ -32,8 +33,8 @@ func TestParser_ParseSingle(t *testing.T) {
 				t.Errorf("expected 1 instruction to be parsed, got %d", len(instructions))
 			}
 
-			if instructions[0].name != test.instructionType {
-				t.Errorf("got %s, want %s", instructions[0].name.toString(), test.instructionType.toString())
+			if instructions[0].Name != test.instructionType {
+				t.Errorf("got %s, want %s", instructions[0].Name.ToString(), test.instructionType.ToString())
 			}
 		})
 	}
@@ -55,68 +56,68 @@ func TestParser_ParseUnknown(t *testing.T) {
 func TestParser_ParseMultiple(t *testing.T) {
 	var tests = []struct {
 		input        string
-		instructions []Instruction
+		instructions []instructions.Instruction
 	}{
 		{
 			"+-",
-			[]Instruction{
+			[]instructions.Instruction{
 				{
-					name: Increment,
-					link: 0,
+					Name: instructions.Increment,
+					Link: 0,
 				},
 				{
-					name: Decrement,
-					link: 0,
+					Name: instructions.Decrement,
+					Link: 0,
 				},
 			},
 		},
 		{
 			">><>",
-			[]Instruction{
+			[]instructions.Instruction{
 				{
-					name: MoveRight,
-					link: 0,
+					Name: instructions.MoveRight,
+					Link: 0,
 				},
 				{
-					name: MoveRight,
-					link: 0,
+					Name: instructions.MoveRight,
+					Link: 0,
 				},
 				{
-					name: MoveLeft,
-					link: 0,
+					Name: instructions.MoveLeft,
+					Link: 0,
 				},
 				{
-					name: MoveRight,
-					link: 0,
+					Name: instructions.MoveRight,
+					Link: 0,
 				},
 			},
 		},
 		{
 			"[[]][]",
-			[]Instruction{
+			[]instructions.Instruction{
 				{
-					name: JumpIfZero,
-					link: 3,
+					Name: instructions.JumpIfZero,
+					Link: 3,
 				},
 				{
-					name: JumpIfZero,
-					link: 2,
+					Name: instructions.JumpIfZero,
+					Link: 2,
 				},
 				{
-					name: JumpUnlessZero,
-					link: 1,
+					Name: instructions.JumpUnlessZero,
+					Link: 1,
 				},
 				{
-					name: JumpUnlessZero,
-					link: 0,
+					Name: instructions.JumpUnlessZero,
+					Link: 0,
 				},
 				{
-					name: JumpIfZero,
-					link: 5,
+					Name: instructions.JumpIfZero,
+					Link: 5,
 				},
 				{
-					name: JumpUnlessZero,
-					link: 4,
+					Name: instructions.JumpUnlessZero,
+					Link: 4,
 				},
 			},
 		},
@@ -136,11 +137,11 @@ func TestParser_ParseMultiple(t *testing.T) {
 			}
 
 			for i, instruction := range instructions {
-				if instruction.name != test.instructions[i].name {
-					t.Errorf("got name %s, want name %s", test.instructions[i].name.toString(), instruction.name.toString())
+				if instruction.Name != test.instructions[i].Name {
+					t.Errorf("got name %s, want name %s", test.instructions[i].Name.ToString(), instruction.Name.ToString())
 				}
-				if instruction.link != test.instructions[i].link {
-					t.Errorf("got link %d, want link %d", test.instructions[i].link, instruction.link)
+				if instruction.Link != test.instructions[i].Link {
+					t.Errorf("got link %d, want link %d", test.instructions[i].Link, instruction.Link)
 				}
 			}
 		})
@@ -148,16 +149,16 @@ func TestParser_ParseMultiple(t *testing.T) {
 }
 
 func TestParser_MatchJumpGroups(t *testing.T) {
-	ifZero := JumpIfZero
-	unlessZero := JumpUnlessZero
+	ifZero := instructions.JumpIfZero
+	unlessZero := instructions.JumpUnlessZero
 
 	var tests = []struct {
 		name            string
 		input           string
 		expectedMissing string
 	}{
-		{ifZero.toString(), "[", "]"},
-		{unlessZero.toString(), "]", "["},
+		{ifZero.ToString(), "[", "]"},
+		{unlessZero.ToString(), "]", "["},
 	}
 
 	for _, test := range tests {

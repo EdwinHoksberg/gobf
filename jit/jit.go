@@ -1,4 +1,6 @@
-package main
+package jit
+
+import "gobf/instructions"
 
 type Jit struct {
 	memorySize uint
@@ -7,7 +9,7 @@ type Jit struct {
 }
 
 type CodeBlock struct {
-	instruction Instruction
+	instruction instructions.Instruction
 	offset      int
 	link        *CodeBlock
 }
@@ -18,4 +20,8 @@ func NewJit(memorySize uint) *Jit {
 		make([]byte, 0),
 		make([]CodeBlock, 0),
 	}
+}
+
+func (jit *Jit) GeneratedCode() []byte {
+	return jit.code
 }

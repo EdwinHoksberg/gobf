@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/hex"
 	"flag"
+	"gobf/jit"
+	"gobf/parser"
 	"io"
 	"log"
 	"os"
@@ -23,26 +25,26 @@ func main() {
 	terminalSettings := disableTerminalInputBuffering()
 	defer resetTerminal(terminalSettings)
 
-	parser := NewParser()
-	instructions, err := parser.Parse(inputData)
+	instructionParser := parser.NewParser()
+	instructions, err := instructionParser.Parse(inputData)
 
 	if err != nil {
 		log.Printf("unrecoverable parser error: %s\n", err)
 		os.Exit(1)
 	}
 
-	jit := NewJit(*memorySize)
-	if err := jit.Compile(instructions); err != nil {
+	jitter := jit.NewJit(*memorySize)
+	if err := jitter.Compile(instructions); err != nil {
 		panic(err)
 	}
 
 	if *dumpGeneratedJitCode {
-		if _, err := os.Stderr.WriteString(hex.EncodeToString(jit.code)); err != nil {
+		if _, err := os.Stderr.WriteString(hex.EncodeToString(jitter.GeneratedCode())); err != nil {
 			log.Printf("error writing jit code to stderr: %s\n", err)
 		}
 	}
 
-	if err := jit.Run(); err != nil {
+	if err := jitter.Run(); err != nil {
 		panic(err)
 	}
 }

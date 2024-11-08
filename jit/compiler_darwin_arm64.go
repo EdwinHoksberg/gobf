@@ -1,15 +1,13 @@
 //go:build darwin && arm64
 
-package main
+package jit
 
 import (
 	"encoding/binary"
-	"errors"
-	"syscall"
-	"unsafe"
+	"gobf/instructions"
 )
 
-func (jit *Jit) Compile(instructions []Instruction) error {
+func (jit *Jit) Compile(parsedInstructions []instructions.Instruction) error {
 	// x0 contains a pointer to program memory
 	// x1 contains a pointer to executable memory
 
@@ -28,24 +26,24 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 		0xef, 0x03, 0x00, 0xaa, // mov x15, x0
 	)
 
-	for _, instruction := range instructions {
+	for _, instruction := range parsedInstructions {
 		block := CodeBlock{
 			instruction: instruction,
 			offset:      len(jit.code),
 		}
 
-		switch instruction.name {
-		case MoveRight:
+		switch instruction.Name {
+		case instructions.MoveRight:
 			jit.code = append(jit.code,
 				// increase the address counter by one
 				0x29, 0x05, 0x00, 0x91, // add x9, x9, #1
 			)
-		case MoveLeft:
+		case instructions.MoveLeft:
 			jit.code = append(jit.code,
 				// decrease the address counter by one
 				0x29, 0x05, 0x00, 0xd1, // sub x9, x9, #1
 			)
-		case Increment:
+		case instructions.Increment:
 			jit.code = append(jit.code,
 				// load the current value of the program memory offset by the address counter
 				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
@@ -56,7 +54,7 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 				// store the value back to the program memory including offset
 				0xeb, 0x69, 0x29, 0x38, // strb w11, [x15, x9]
 			)
-		case Decrement:
+		case instructions.Decrement:
 			jit.code = append(jit.code,
 				// load the current value of the program memory offset by the address counter
 				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
@@ -67,7 +65,7 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 				// store the value back to the program memory including offset
 				0xeb, 0x69, 0x29, 0x38, // strb w11, [x15, x9]
 			)
-		case Write:
+		case instructions.Write:
 			jit.code = append(jit.code,
 				// arg 1, stdout file descriptor
 				0x20, 0x00, 0x80, 0xd2, // mov x0, #1
@@ -87,7 +85,7 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 				// execute syscall
 				0x01, 0x10, 0x00, 0xd4, // svc #0x80
 			)
-		case Read:
+		case instructions.Read:
 			jit.code = append(jit.code,
 				// arg 1, stdout file descriptor
 				0x00, 0x00, 0x80, 0xd2, // mov x0, #0
@@ -107,7 +105,7 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 				// execute syscall
 				0x01, 0x10, 0x00, 0xd4, // svc #0x80
 			)
-		case JumpIfZero:
+		case instructions.JumpIfZero:
 			jit.code = append(jit.code,
 				// load the current value of the program memory offset by the address counter
 				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
@@ -115,7 +113,7 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 				// jump to right before the linked jump instruction
 				0x2b, 0x00, 0x00, 0x34, // cbz w11, #0
 			)
-		case JumpUnlessZero:
+		case instructions.JumpUnlessZero:
 			jit.code = append(jit.code,
 				// load the current value of the program memory offset by the address counter
 				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
@@ -141,49 +139,17 @@ func (jit *Jit) Compile(instructions []Instruction) error {
 	return nil
 }
 
-func (jit *Jit) Run() error {
-	// Allocate program memory
-	programMemory, err := syscall.Mmap(-1, 0, int(jit.memorySize), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_ANON|syscall.MAP_PRIVATE)
-	if err != nil {
-		return errors.New("failed to map program memory: " + err.Error())
-	}
-
-	// Allocate executable memory
-	executableMemory, err := syscall.Mmap(-1, 0, len(jit.code), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_ANON|syscall.MAP_PRIVATE)
-	if err != nil {
-		return errors.New("failed to map executable memory: " + err.Error())
-	}
-
-	// Copy JIT instructions to executable memory
-	copy(executableMemory, jit.code)
-
-	// Change permissions to executable
-	if err := syscall.Mprotect(executableMemory, syscall.PROT_EXEC); err != nil {
-		return errors.New("failed to make executable memory executable: " + err.Error())
-	}
-
-	// Cast allocated memory regions to function pointers
-	executableMemoryPointer := &executableMemory
-	programMemoryPointer := unsafe.Pointer(&programMemory[0])
-
-	// Define JIT call function and execute it
-	f := *(*func(programMemory unsafe.Pointer))(unsafe.Pointer(&executableMemoryPointer))
-	f(programMemoryPointer)
-
-	return nil
-}
-
 func (jit *Jit) postProcessJumps() {
 	for i, block := range jit.codeBlocks {
-		if !block.instruction.isJump() {
+		if !block.instruction.IsJump() {
 			continue
 		}
 
-		jit.codeBlocks[i].link = &jit.codeBlocks[block.instruction.link]
+		jit.codeBlocks[i].link = &jit.codeBlocks[block.instruction.Link]
 	}
 
 	for _, block := range jit.codeBlocks {
-		if !block.instruction.isJump() {
+		if !block.instruction.IsJump() {
 			// Only process jump instructions
 			continue
 		}
@@ -207,7 +173,7 @@ func (jit *Jit) postProcessJumps() {
 
 		// Base opcode for CBZ
 		opcode := uint32(0x34000000)
-		if block.instruction.name == JumpUnlessZero {
+		if block.instruction.Name == instructions.JumpUnlessZero {
 			// Base opcode for CBNZ
 			opcode = uint32(0x35000000)
 		}

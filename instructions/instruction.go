@@ -1,4 +1,4 @@
-package main
+package instructions
 
 type InstructionType uint
 
@@ -15,11 +15,11 @@ const (
 )
 
 type Instruction struct {
-	name InstructionType
-	link int
+	Name InstructionType
+	Link int
 }
 
-func (instruction *InstructionType) toString() string {
+func (instruction *InstructionType) ToString() string {
 	switch *instruction {
 	case MoveRight:
 		return "MoveRight"
@@ -44,6 +44,6 @@ func (instruction *InstructionType) toString() string {
 	return "Unknown"
 }
 
-func (instruction *Instruction) isJump() bool {
-	return instruction.name == JumpIfZero || instruction.name == JumpUnlessZero
+func (instruction *Instruction) IsJump() bool {
+	return instruction.Name == JumpIfZero || instruction.Name == JumpUnlessZero
 }
