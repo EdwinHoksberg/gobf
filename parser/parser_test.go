@@ -26,17 +26,11 @@ func TestParser_ParseSingle(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			instructions, err := parser.Parse(test.input)
 
-			if err != nil {
-				t.Errorf("expected no error, got %s", err)
-			}
+			assert.NoError(t, err)
 
-			if len(instructions) != 1 {
-				t.Errorf("expected 1 instruction to be parsed, got %d", len(instructions))
-			}
+			assert.Len(t, instructions, 1)
 
-			if instructions[0].Name != test.instructionType {
-				t.Errorf("got %s, want %s", instructions[0].Name.ToString(), test.instructionType.ToString())
-			}
+			assert.Equal(t, test.instructionType, instructions[0].Name)
 		})
 	}
 }
@@ -45,13 +39,9 @@ func TestParser_ParseUnknown(t *testing.T) {
 	parser := NewParser()
 	instructions, err := parser.Parse("x")
 
-	if err != nil {
-		t.Errorf("expected no error, got %s", err)
-	}
+	assert.NoError(t, err)
 
-	if len(instructions) != 0 {
-		t.Errorf("expected 0 instructions to be parsed, got %d", len(instructions))
-	}
+	assert.Empty(t, instructions)
 }
 
 func TestParser_ParseMultiple(t *testing.T) {
@@ -132,15 +122,6 @@ func TestParser_ParseMultiple(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.Equal(t, test.instructions, instructions)
-
-			//for i, instruction := range instructions {
-			//	if instruction.Name != test.instructions[i].Name {
-			//		t.Errorf("got name %s, want name %s", test.instructions[i].Name.ToString(), instruction.Name.ToString())
-			//	}
-			//	if instruction.Value != test.instructions[i].Value {
-			//		t.Errorf("got link %d, want link %d", test.instructions[i].Value, instruction.Value)
-			//	}
-			//}
 		})
 	}
 }
@@ -163,13 +144,9 @@ func TestParser_MatchJumpGroups(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			instructions, err := parser.Parse(test.input)
 
-			if err.Error() != fmt.Sprintf("no matching '%s' found", test.expectedMissing) {
-				t.Errorf("parsing missing instruction did not error")
-			}
+			assert.Equal(t, fmt.Sprintf("no matching '%s' found", test.expectedMissing), err.Error())
 
-			if len(instructions) != 0 {
-				t.Errorf("parsing produced unexpected instructions")
-			}
+			assert.Empty(t, instructions)
 		})
 	}
 }
