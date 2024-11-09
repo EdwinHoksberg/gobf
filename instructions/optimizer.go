@@ -1,15 +1,8 @@
 package instructions
 
-import "fmt"
-
-// @todo
-//   - recalculate jump points
-//   - actually use optimized value in jit code
-
 type optimizedBlock struct {
-	startIndex  int
-	length      int
-	instruction InstructionType
+	startIndex int
+	length     int
 }
 
 func OptimizeInstructions(instructions []Instruction) []Instruction {
@@ -42,24 +35,19 @@ func OptimizeInstructions(instructions []Instruction) []Instruction {
 			}
 		}
 
-		fmt.Printf("optimizing %s, %d recurring\n", instructionType.ToString(), recurringInstructions)
-
 		instruction.Value = recurringInstructions
 		optimizedInstructions = append(optimizedInstructions, instruction)
 
 		// Store optimizations that have been to done to patch up jumps later
 		performedOptimizations = append(performedOptimizations, optimizedBlock{
-			startIndex:  instructionIndex,
-			length:      recurringInstructions - 1,
-			instruction: instructionType,
+			startIndex: instructionIndex,
+			length:     recurringInstructions - 1,
 		})
 
 		instructionIndex += recurringInstructions - 1
 	}
 
 	recalculateJumps(&optimizedInstructions, performedOptimizations)
-
-	fmt.Printf("before %d, after: %d (diff: %d)\n", len(instructions), len(optimizedInstructions), len(instructions)-len(optimizedInstructions))
 
 	return optimizedInstructions
 }
@@ -79,7 +67,7 @@ func recalculateJumps(instructions *[]Instruction, performedOptimizations []opti
 				recalculatedJumps[instructionIndex] = instruction.Value
 			}
 
-			// Fix jumps with links after offset and ...
+			// Fix jumps with links after offset
 			jumpLinksToInstructionAfterOffset := instruction.Value > optimization.startIndex && (optimization.startIndex+optimization.length) < instruction.Value
 			// Fix jumps that exist after offset that link back to everything before offset+length
 			jumpExistsAfterOffsetAndLinksBackBeforeOptimization := instructionIndex > optimization.startIndex && instruction.Value > optimization.startIndex
