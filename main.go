@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"flag"
+	"gobf/instructions"
 	"gobf/jit"
 	"gobf/parser"
 	"io"
@@ -13,6 +14,7 @@ import (
 func main() {
 	memorySize := flag.Uint("memory-size", 30_000, "Size (in bytes) of the memory available to the program")
 	dumpGeneratedJitCode := flag.Bool("dump-jit", false, "Dump generated JIT code to stderr")
+	disableInstructionOptimizer := flag.Bool("disable-instruction-optimizer", false, "Disable optimizer of JIT code")
 	flag.Parse()
 
 	if len(flag.Args()) != 1 {
@@ -26,15 +28,18 @@ func main() {
 	defer resetTerminal(terminalSettings)
 
 	instructionParser := parser.NewParser()
-	instructions, err := instructionParser.Parse(inputData)
-
+	parsedInstructions, err := instructionParser.Parse(inputData)
 	if err != nil {
 		log.Printf("unrecoverable parser error: %s\n", err)
 		os.Exit(1)
 	}
 
+	if !*disableInstructionOptimizer {
+		parsedInstructions = instructions.OptimizeInstructions(parsedInstructions)
+	}
+
 	jitter := jit.NewJit(*memorySize)
-	if err := jitter.Compile(instructions); err != nil {
+	if err := jitter.Compile(parsedInstructions); err != nil {
 		panic(err)
 	}
 

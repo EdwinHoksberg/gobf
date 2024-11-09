@@ -34,27 +34,29 @@ func (parser *Parser) Parse(input string) ([]instructions.Instruction, error) {
 			continue
 		}
 
+		instructionValue := 1
 		if instructionName == instructions.JumpIfZero {
 			depth++
 			depthMap[depth] = counter
+
+			instructionValue = 0
 		}
 
-		var linkOffset = 0
 		if instructionName == instructions.JumpUnlessZero {
 			if depth == 0 {
 				return nil, errors.New("no matching '[' found")
 			}
 
-			linkOffset = depthMap[depth]
+			instructionValue = depthMap[depth]
 			delete(depthMap, depth)
 
 			depth--
-			parsedInstructions[linkOffset].Link = counter
+			parsedInstructions[instructionValue].Value = counter
 		}
 
 		instruction := instructions.Instruction{
-			Name: instructionName,
-			Link: linkOffset,
+			Name:  instructionName,
+			Value: instructionValue,
 		}
 
 		parsedInstructions = append(parsedInstructions, instruction)

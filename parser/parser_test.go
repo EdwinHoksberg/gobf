@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"gobf/instructions"
 	"testing"
 )
@@ -62,12 +63,12 @@ func TestParser_ParseMultiple(t *testing.T) {
 			"+-",
 			[]instructions.Instruction{
 				{
-					Name: instructions.Increment,
-					Link: 0,
+					Name:  instructions.Increment,
+					Value: 1,
 				},
 				{
-					Name: instructions.Decrement,
-					Link: 0,
+					Name:  instructions.Decrement,
+					Value: 1,
 				},
 			},
 		},
@@ -75,20 +76,20 @@ func TestParser_ParseMultiple(t *testing.T) {
 			">><>",
 			[]instructions.Instruction{
 				{
-					Name: instructions.MoveRight,
-					Link: 0,
+					Name:  instructions.MoveRight,
+					Value: 1,
 				},
 				{
-					Name: instructions.MoveRight,
-					Link: 0,
+					Name:  instructions.MoveRight,
+					Value: 1,
 				},
 				{
-					Name: instructions.MoveLeft,
-					Link: 0,
+					Name:  instructions.MoveLeft,
+					Value: 1,
 				},
 				{
-					Name: instructions.MoveRight,
-					Link: 0,
+					Name:  instructions.MoveRight,
+					Value: 1,
 				},
 			},
 		},
@@ -96,28 +97,28 @@ func TestParser_ParseMultiple(t *testing.T) {
 			"[[]][]",
 			[]instructions.Instruction{
 				{
-					Name: instructions.JumpIfZero,
-					Link: 3,
+					Name:  instructions.JumpIfZero,
+					Value: 3,
 				},
 				{
-					Name: instructions.JumpIfZero,
-					Link: 2,
+					Name:  instructions.JumpIfZero,
+					Value: 2,
 				},
 				{
-					Name: instructions.JumpUnlessZero,
-					Link: 1,
+					Name:  instructions.JumpUnlessZero,
+					Value: 1,
 				},
 				{
-					Name: instructions.JumpUnlessZero,
-					Link: 0,
+					Name:  instructions.JumpUnlessZero,
+					Value: 0,
 				},
 				{
-					Name: instructions.JumpIfZero,
-					Link: 5,
+					Name:  instructions.JumpIfZero,
+					Value: 5,
 				},
 				{
-					Name: instructions.JumpUnlessZero,
-					Link: 4,
+					Name:  instructions.JumpUnlessZero,
+					Value: 4,
 				},
 			},
 		},
@@ -128,22 +129,18 @@ func TestParser_ParseMultiple(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			instructions, err := parser.Parse(test.input)
 
-			if err != nil {
-				t.Errorf("expected no error, got %s", err)
-			}
+			assert.NoError(t, err)
 
-			if len(instructions) != len(test.instructions) {
-				t.Errorf("expected %d instruction to be parsed, got %d (%v)", len(test.instructions), len(instructions), instructions)
-			}
+			assert.Equal(t, test.instructions, instructions)
 
-			for i, instruction := range instructions {
-				if instruction.Name != test.instructions[i].Name {
-					t.Errorf("got name %s, want name %s", test.instructions[i].Name.ToString(), instruction.Name.ToString())
-				}
-				if instruction.Link != test.instructions[i].Link {
-					t.Errorf("got link %d, want link %d", test.instructions[i].Link, instruction.Link)
-				}
-			}
+			//for i, instruction := range instructions {
+			//	if instruction.Name != test.instructions[i].Name {
+			//		t.Errorf("got name %s, want name %s", test.instructions[i].Name.ToString(), instruction.Name.ToString())
+			//	}
+			//	if instruction.Value != test.instructions[i].Value {
+			//		t.Errorf("got link %d, want link %d", test.instructions[i].Value, instruction.Value)
+			//	}
+			//}
 		})
 	}
 }
