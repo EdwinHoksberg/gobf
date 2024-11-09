@@ -15,8 +15,8 @@ const (
 )
 
 type Instruction struct {
-	Name InstructionType
-	Link int
+	Name  InstructionType
+	Value int
 }
 
 func (instruction *InstructionType) ToString() string {
@@ -46,4 +46,11 @@ func (instruction *InstructionType) ToString() string {
 
 func (instruction *Instruction) IsJump() bool {
 	return instruction.Name == JumpIfZero || instruction.Name == JumpUnlessZero
+}
+
+func (instruction *Instruction) CanBeOptimized() bool {
+	return instruction.Name == MoveRight ||
+		instruction.Name == MoveLeft ||
+		instruction.Name == Increment ||
+		instruction.Name == Decrement
 }

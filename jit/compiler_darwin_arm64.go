@@ -67,7 +67,7 @@ func (jit *Jit) Compile(parsedInstructions []instructions.Instruction) error {
 			)
 		case instructions.Write:
 			jit.code = append(jit.code,
-				// arg 1, stdout file descriptor
+				// arg 1, file descriptor, 1 = stdout
 				0x20, 0x00, 0x80, 0xd2, // mov x0, #1
 
 				// arg 2, pointer to code string
@@ -87,7 +87,7 @@ func (jit *Jit) Compile(parsedInstructions []instructions.Instruction) error {
 			)
 		case instructions.Read:
 			jit.code = append(jit.code,
-				// arg 1, stdout file descriptor
+				// arg 1, file descriptor, 0 = stdin
 				0x00, 0x00, 0x80, 0xd2, // mov x0, #0
 
 				// arg 2, pointer to input buffer
@@ -145,7 +145,7 @@ func (jit *Jit) postProcessJumps() {
 			continue
 		}
 
-		jit.codeBlocks[i].link = &jit.codeBlocks[block.instruction.Link]
+		jit.codeBlocks[i].link = &jit.codeBlocks[block.instruction.Value]
 	}
 
 	for _, block := range jit.codeBlocks {
