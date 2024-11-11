@@ -129,6 +129,17 @@ func (jit *Jit) Compile(parsedInstructions []instructions.Instruction) error {
 				// jump to right after the linked jump instruction
 				0x0, 0x0, 0x0, 0x0, // placeholder
 			)
+		case instructions.Clear:
+			jit.code = append(jit.code,
+				// load the current value of the program memory offset by the address counter
+				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
+
+				// add one to the value which we've loaded
+				0x0b, 0x00, 0x80, 0x52, // mov w11, #0
+
+				// store the value back to the program memory including offset
+				0xeb, 0x69, 0x29, 0x38, // strb w11, [x15, x9]
+			)
 		}
 
 		jit.codeBlocks = append(jit.codeBlocks, block)

@@ -12,6 +12,11 @@ const (
 	Read
 	JumpIfZero
 	JumpUnlessZero
+
+	// The following instructions are unofficial and only used when the instruction optimizer is enabled.
+
+	// Clear is an instruction for optimizing zero-ing out a register: [-]
+	Clear
 )
 
 type Instruction struct {
@@ -37,6 +42,8 @@ func (instruction *InstructionType) ToString() string {
 		return "JumpIfZero"
 	case JumpUnlessZero:
 		return "JumpUnlessZero"
+	case Clear:
+		return "Clear"
 	case Unknown:
 		return "Unknown"
 	}

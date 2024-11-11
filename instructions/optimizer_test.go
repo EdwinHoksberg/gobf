@@ -163,6 +163,23 @@ func TestInstructions_Optimize(t *testing.T) {
 				{Name: Increment, Value: 0},
 			},
 		},
+		{
+			[]Instruction{
+				{Name: Increment, Value: 0},
+				{Name: Increment, Value: 0},
+				{Name: Increment, Value: 0},
+				{Name: JumpIfZero, Value: 5},
+				{Name: Decrement, Value: 0},
+				{Name: JumpUnlessZero, Value: 3},
+				{Name: Increment, Value: 0},
+				{Name: Increment, Value: 0},
+			},
+			[]Instruction{
+				{Name: Increment, Value: 3},
+				{Name: Clear, Value: 5},
+				{Name: Increment, Value: 2},
+			},
+		},
 	}
 
 	for i, test := range tests {

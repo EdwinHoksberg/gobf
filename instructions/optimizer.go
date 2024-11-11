@@ -5,16 +5,39 @@ type optimizedBlock struct {
 	length     int
 }
 
+var optimizedInstructions []Instruction
+var performedOptimizations []optimizedBlock
+
 func OptimizeInstructions(instructions []Instruction) []Instruction {
-	optimizedInstructions := make([]Instruction, 0)
-	performedOptimizations := make([]optimizedBlock, 0)
+	optimizedInstructions = make([]Instruction, 0)
+	performedOptimizations = make([]optimizedBlock, 0)
 
 	for instructionIndex := 0; instructionIndex < len(instructions); instructionIndex++ {
 		instruction := instructions[instructionIndex]
 		instructionType := instruction.Name
 
-		// Only try to optimize instructions that can be optimized and if we still have instructions left to process
-		if !instruction.CanBeOptimized() || len(instructions)-1 == instructionIndex {
+		// Only try to optimize if we still have instructions left to process
+		if len(instructions)-1 == instructionIndex {
+			optimizedInstructions = append(optimizedInstructions, instruction)
+			continue
+		}
+
+		// Clear instruction optimization (needs at least 3 instructions)
+		if instructionIndex < len(instructions)-2 {
+			// [-]
+			if instructionType == JumpIfZero &&
+				instructions[instructionIndex+1].Name == Decrement &&
+				instructions[instructionIndex+2].Name == JumpUnlessZero {
+
+				instruction.Name = Clear
+
+				storeOptimization(&instructionIndex, 2, instruction)
+				continue
+			}
+		}
+
+		// Only try to optimize instructions that can be optimized
+		if !instruction.CanBeOptimized() {
 			optimizedInstructions = append(optimizedInstructions, instruction)
 			continue
 		}
@@ -36,20 +59,24 @@ func OptimizeInstructions(instructions []Instruction) []Instruction {
 		}
 
 		instruction.Value = recurringInstructions
-		optimizedInstructions = append(optimizedInstructions, instruction)
-
-		// Store optimizations that have been to done to patch up jumps later
-		performedOptimizations = append(performedOptimizations, optimizedBlock{
-			startIndex: instructionIndex,
-			length:     recurringInstructions - 1,
-		})
-
-		instructionIndex += recurringInstructions - 1
+		storeOptimization(&instructionIndex, recurringInstructions-1, instruction)
 	}
 
 	recalculateJumps(&optimizedInstructions, performedOptimizations)
 
 	return optimizedInstructions
+}
+
+func storeOptimization(instructionIndex *int, length int, instruction Instruction) {
+	optimizedInstructions = append(optimizedInstructions, instruction)
+
+	// Store optimizations that have been to done to patch up jumps later
+	performedOptimizations = append(performedOptimizations, optimizedBlock{
+		startIndex: *instructionIndex,
+		length:     length,
+	})
+
+	*instructionIndex += length
 }
 
 func recalculateJumps(instructions *[]Instruction, performedOptimizations []optimizedBlock) {
