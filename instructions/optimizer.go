@@ -13,58 +13,77 @@ func OptimizeInstructions(instructions []Instruction) []Instruction {
 	performedOptimizations = make([]optimizedBlock, 0)
 
 	for instructionIndex := 0; instructionIndex < len(instructions); instructionIndex++ {
-		instruction := instructions[instructionIndex]
-		instructionType := instruction.Name
+		// Only try to optimize if we still have at least 2 instructions left to process
+		if instructionIndex > len(instructions)-2 {
+			optimizedInstructions = append(optimizedInstructions, instructions[instructionIndex:]...)
+			break
+		}
 
-		// Only try to optimize if we still have instructions left to process
-		if len(instructions)-1 == instructionIndex {
-			optimizedInstructions = append(optimizedInstructions, instruction)
+		if optimizeClear(instructions, &instructionIndex) {
 			continue
 		}
 
-		// Clear instruction optimization (needs at least 3 instructions)
-		if instructionIndex < len(instructions)-2 {
-			// [-]
-			if instructionType == JumpIfZero &&
-				instructions[instructionIndex+1].Name == Decrement &&
-				instructions[instructionIndex+2].Name == JumpUnlessZero {
-
-				instruction.Name = Clear
-
-				storeOptimization(&instructionIndex, 2, instruction)
-				continue
-			}
-		}
-
-		// Only try to optimize instructions that can be optimized
-		if !instruction.CanBeOptimized() {
-			optimizedInstructions = append(optimizedInstructions, instruction)
+		if optimizeConsecutive(instructions, &instructionIndex) {
 			continue
 		}
 
-		// Check if we have at least one other instruction of the same type coming up
-		if instructions[instructionIndex+1].Name != instructionType {
-			optimizedInstructions = append(optimizedInstructions, instruction)
-			continue
-		}
-
-		// Now we know what we have at least one more recurring instruction ahead,
-		// loop until we find one that isn't the same, or we have reached the end of the instructions to process
-		recurringInstructions := 1
-		for j := 0; true; j++ {
-			if instructionIndex+j > len(instructions)-1 || instructions[instructionIndex+j].Name != instructionType {
-				recurringInstructions = j
-				break
-			}
-		}
-
-		instruction.Value = recurringInstructions
-		storeOptimization(&instructionIndex, recurringInstructions-1, instruction)
+		// If we couldn't find any optimizations, just append the instruction and try the next one
+		optimizedInstructions = append(optimizedInstructions, instructions[instructionIndex])
 	}
 
 	recalculateJumps(&optimizedInstructions, performedOptimizations)
 
 	return optimizedInstructions
+}
+
+func optimizeClear(instructions []Instruction, instructionIndex *int) bool {
+	instruction := instructions[*instructionIndex]
+
+	// Clear instruction optimization (needs at least 3 instructions)
+	if *instructionIndex < len(instructions)-2 {
+		// [-]
+		if instruction.Name == JumpIfZero &&
+			instructions[*instructionIndex+1].Name == Decrement &&
+			instructions[*instructionIndex+2].Name == JumpUnlessZero {
+
+			instruction.Name = Clear
+
+			storeOptimization(instructionIndex, 2, instruction)
+
+			return true
+		}
+	}
+
+	return false
+}
+
+func optimizeConsecutive(instructions []Instruction, instructionIndex *int) bool {
+	instruction := instructions[*instructionIndex]
+
+	// Only try to optimize instructions that can be optimized
+	if !instruction.CanBeOptimized() {
+		return false
+	}
+
+	// Check if we have at least one other instruction of the same type coming up
+	if instructions[*instructionIndex+1].Name != instruction.Name {
+		return false
+	}
+
+	// Now we know what we have at least one more recurring instruction ahead,
+	// loop until we find one that isn't the same, or we have reached the end of the instructions to process
+	recurringInstructions := 1
+	for j := 0; true; j++ {
+		if *instructionIndex+j > len(instructions)-1 || instructions[*instructionIndex+j].Name != instruction.Name {
+			recurringInstructions = j
+			break
+		}
+	}
+
+	instruction.Value = recurringInstructions
+	storeOptimization(instructionIndex, recurringInstructions-1, instruction)
+
+	return true
 }
 
 func storeOptimization(instructionIndex *int, length int, instruction Instruction) {
