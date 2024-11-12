@@ -37,21 +37,22 @@ func OptimizeInstructions(instructions []Instruction) []Instruction {
 }
 
 func optimizeClear(instructions []Instruction, instructionIndex *int) bool {
+	// Clear instruction optimization (needs at least 3 instructions)
+	if *instructionIndex > len(instructions)-2 {
+		return false
+	}
+
 	instruction := instructions[*instructionIndex]
 
-	// Clear instruction optimization (needs at least 3 instructions)
-	if *instructionIndex < len(instructions)-2 {
-		// [-]
-		if instruction.Name == JumpIfZero &&
-			instructions[*instructionIndex+1].Name == Decrement &&
-			instructions[*instructionIndex+2].Name == JumpUnlessZero {
+	// [-]
+	if instruction.Name == JumpIfZero &&
+		instructions[*instructionIndex+1].Name == Decrement &&
+		instructions[*instructionIndex+2].Name == JumpUnlessZero {
 
-			instruction.Name = Clear
+		instruction.Name = Clear
+		storeOptimization(instructionIndex, 2, instruction)
 
-			storeOptimization(instructionIndex, 2, instruction)
-
-			return true
-		}
+		return true
 	}
 
 	return false

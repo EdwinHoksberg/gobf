@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	OpcodeAdd  = uint32(0x91000000)
-	OpcodeSub  = uint32(0xd1000000)
+	OpcodeAdd  = uint32(0x11000000)
+	OpcodeSub  = uint32(0x51000000)
 	OpcodeCbz  = uint32(0x34000000)
 	OpcodeCbnz = uint32(0x35000000)
 )
@@ -131,10 +131,7 @@ func (jit *Jit) Compile(parsedInstructions []instructions.Instruction) error {
 			)
 		case instructions.Clear:
 			jit.code = append(jit.code,
-				// load the current value of the program memory offset by the address counter
-				0xeb, 0x69, 0x69, 0x38, // ldrb w11, [x15, x9]
-
-				// add one to the value which we've loaded
+				// set up a zero value
 				0x0b, 0x00, 0x80, 0x52, // mov w11, #0
 
 				// store the value back to the program memory including offset
